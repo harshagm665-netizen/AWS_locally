@@ -212,7 +212,8 @@ aws-locally-floci/
 | `make deploy` | 🏗️ Deploy CloudFormation stacks |
 | `make test` | 🧪 Run smoke tests |
 | `make clean` | 🧹 Remove all data & containers |
-| `make setup` | 🔧 Initial project setup |
+| `make setup` | 🔧 Initial setup |
+| `make fix` | 🛠️ Auto-fix common errors |
 
 ### Running Individual Scripts
 
@@ -249,7 +250,15 @@ aws s3 ls
 
 ## 🐛 Troubleshooting
 
-### Floci won't start
+### The Easy Way (Auto-Fix)
+Run the built-in troubleshooting tool to automatically fix permissions, port conflicts, and stuck containers:
+```bash
+make fix
+```
+
+### Manual Troubleshooting
+
+#### Floci won't start
 ```bash
 docker info                      # Check Docker is running
 docker-compose logs floci        # View logs

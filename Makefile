@@ -1,4 +1,4 @@
-.PHONY: help up down restart status logs demo test deploy clean setup
+.PHONY: help up down restart status logs demo test deploy clean setup fix
 
 .DEFAULT_GOAL := help
 COMPOSE_FILE  := docker-compose.yml
@@ -78,6 +78,9 @@ clean: ## 🧹 Remove all data
 	@rm -rf data/
 	@rm -f lambda/**/*.zip 2>/dev/null || true
 	@echo "$(B)$(G)✓ Clean$(X)"
+
+fix: ## 🔧 Auto-fix common errors (permissions, ports, stuck containers)
+	@bash utils/auto-fix.sh
 
 setup: ## 🔧 Initial setup
 	@[ -f .env ] || cp .env.example .env
