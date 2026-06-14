@@ -1,0 +1,1 @@
+# Event Processor Lambda — No external dependencies required

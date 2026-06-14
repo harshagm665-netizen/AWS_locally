@@ -1,0 +1,56 @@
+# ==============================================================================
+# AWS LocalStack — Git Ignore Rules
+# ==============================================================================
+
+# ── LocalStack Data ──
+volume/
+.localstack/
+*.tfstate
+*.tfstate.backup
+
+# ── Environment Secrets ──
+.env
+.env.local
+.env.production
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+
+# ── Lambda Deployment Packages ──
+lambda/**/*.zip
+*.zip
+
+# ── Node.js ──
+node_modules/
+
+# ── OS Files ──
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+
+# ── IDE ──
+.idea/
+.vscode/
+*.iml
+.project
+.classpath
+
+# ── Logs ──
+*.log
+logs/
+
+# ── Temporary ──
+tmp/
+temp/
