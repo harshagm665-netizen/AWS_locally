@@ -1,142 +1,85 @@
-# ==============================================================================
-#  AWS LocalStack — Makefile
-# ==============================================================================
-#  One-command operations for managing your local AWS environment.
-#
-#  Usage:
-#    make help        Show all available targets
-#    make up          Start LocalStack
-#    make down        Stop LocalStack
-#    make demo        Run all service demonstrations
-#    make test        Run smoke tests
-#    make deploy      Deploy CloudFormation stacks
-# ==============================================================================
+.PHONY: help up down restart status logs demo test deploy clean setup
 
-.PHONY: help up down restart status logs demo test deploy clean setup install-deps
-
-# ── Default Target ──
 .DEFAULT_GOAL := help
-
-# ── Configuration ──
 COMPOSE_FILE  := docker-compose.yml
 SCRIPTS_DIR   := scripts
 TESTS_DIR     := tests
-CF_DIR        := cloudformation
 SHELL         := /bin/bash
+C := \033[36m
+G := \033[32m
+Y := \033[33m
+R := \033[31m
+B := \033[1m
+X := \033[0m
 
-# ── Colors ──
-CYAN    := \033[36m
-GREEN   := \033[32m
-YELLOW  := \033[33m
-RED     := \033[31m
-BOLD    := \033[1m
-RESET   := \033[0m
-
-# ==============================================================================
-#  TARGETS
-# ==============================================================================
-
-help: ## 📖 Show this help message
+help: ## 📖 Show all commands
 	@echo ""
-	@echo "$(BOLD)$(CYAN)  ╔══════════════════════════════════════════════════════════════╗$(RESET)"
-	@echo "$(BOLD)$(CYAN)  ║          AWS LocalStack — Command Reference                 ║$(RESET)"
-	@echo "$(BOLD)$(CYAN)  ╚══════════════════════════════════════════════════════════════╝$(RESET)"
+	@echo "$(B)$(C)  ╔═══════════════════════════════════════════════════════════╗$(X)"
+	@echo "$(B)$(C)  ║        Floci — AWS Services Locally                      ║$(X)"
+	@echo "$(B)$(C)  ╚═══════════════════════════════════════════════════════════╝$(X)"
 	@echo ""
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
-		awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-18s$(RESET) %s\n", $$1, $$2}'
+		awk 'BEGIN {FS = ":.*?## "}; {printf "  $(G)%-18s$(X) %s\n", $$1, $$2}'
 	@echo ""
 
-# ── Lifecycle ────────────────────────────────────────────────────────────────
+up: ## 🚀 Start Floci
+	@echo "$(B)$(G)▸ Starting Floci...$(X)"
+	@docker compose -f $(COMPOSE_FILE) up -d
+	@bash utils/wait-for-floci.sh
+	@echo "$(B)$(G)✓ Floci ready at http://localhost:4566$(X)"
 
-up: ## 🚀 Start LocalStack services
-	@echo "$(BOLD)$(GREEN)▸ Starting LocalStack...$(RESET)"
-	@docker-compose -f $(COMPOSE_FILE) up -d
-	@bash utils/wait-for-localstack.sh
-	@echo "$(BOLD)$(GREEN)✓ LocalStack is ready at http://localhost:4566$(RESET)"
+down: ## 🛑 Stop Floci
+	@docker compose -f $(COMPOSE_FILE) down
 
-down: ## 🛑 Stop LocalStack services
-	@echo "$(BOLD)$(YELLOW)▸ Stopping LocalStack...$(RESET)"
-	@docker-compose -f $(COMPOSE_FILE) down
-	@echo "$(BOLD)$(GREEN)✓ LocalStack stopped$(RESET)"
+restart: down up ## 🔄 Restart Floci
 
-restart: down up ## 🔄 Restart LocalStack services
-
-status: ## 📊 Check LocalStack health status
+status: ## 📊 Health check
 	@bash $(SCRIPTS_DIR)/00-health-check.sh
 
-logs: ## 📋 Stream LocalStack logs
-	@docker-compose -f $(COMPOSE_FILE) logs -f --tail=100
+logs: ## 📋 Stream logs
+	@docker compose -f $(COMPOSE_FILE) logs -f --tail=100
 
-# ── Service Demonstrations ───────────────────────────────────────────────────
-
-demo: ## 🎬 Run ALL service demonstrations
+demo: ## 🎬 Run ALL service demos
 	@bash $(SCRIPTS_DIR)/run-all.sh
 
-demo-s3: ## 📦 Run S3 operations demo
+demo-s3: ## 📦 S3 demo
 	@bash $(SCRIPTS_DIR)/01-s3-operations.sh
-
-demo-dynamodb: ## 🗄️  Run DynamoDB operations demo
+demo-dynamodb: ## 🗄️  DynamoDB demo
 	@bash $(SCRIPTS_DIR)/02-dynamodb-operations.sh
-
-demo-sqs: ## 📨 Run SQS operations demo
+demo-sqs: ## 📨 SQS demo
 	@bash $(SCRIPTS_DIR)/03-sqs-operations.sh
-
-demo-sns: ## 📢 Run SNS operations demo
+demo-sns: ## 📢 SNS demo
 	@bash $(SCRIPTS_DIR)/04-sns-operations.sh
-
-demo-lambda: ## ⚡ Run Lambda operations demo
+demo-lambda: ## ⚡ Lambda demo
 	@bash $(SCRIPTS_DIR)/05-lambda-operations.sh
-
-demo-apigateway: ## 🌐 Run API Gateway operations demo
+demo-apigateway: ## 🌐 API Gateway demo
 	@bash $(SCRIPTS_DIR)/06-apigateway-operations.sh
-
-demo-iam: ## 🔐 Run IAM operations demo
+demo-iam: ## 🔐 IAM demo
 	@bash $(SCRIPTS_DIR)/07-iam-operations.sh
-
-demo-ec2: ## 💻 Run EC2 operations demo
+demo-ec2: ## 💻 EC2 demo
 	@bash $(SCRIPTS_DIR)/09-ec2-operations.sh
-
-demo-secrets: ## 🔑 Run Secrets Manager operations demo
+demo-secrets: ## 🔑 Secrets Manager demo
 	@bash $(SCRIPTS_DIR)/10-secretsmanager-ops.sh
-
-demo-stepfunctions: ## 🔀 Run Step Functions operations demo
+demo-stepfunctions: ## 🔀 Step Functions demo
 	@bash $(SCRIPTS_DIR)/11-stepfunctions-ops.sh
-
-demo-kinesis: ## 🌊 Run Kinesis operations demo
+demo-kinesis: ## 🌊 Kinesis demo
 	@bash $(SCRIPTS_DIR)/12-kinesis-operations.sh
-
-demo-eventbridge: ## 📅 Run EventBridge operations demo
+demo-eventbridge: ## 📅 EventBridge demo
 	@bash $(SCRIPTS_DIR)/13-eventbridge-ops.sh
-
-# ── Infrastructure as Code ───────────────────────────────────────────────────
 
 deploy: ## 🏗️  Deploy CloudFormation stacks
 	@bash $(SCRIPTS_DIR)/08-cloudformation-deploy.sh
 
-validate: ## ✅ Validate CloudFormation templates
-	@bash $(TESTS_DIR)/validate-stack.sh
-
-# ── Testing ──────────────────────────────────────────────────────────────────
-
-test: ## 🧪 Run smoke tests for all services
+test: ## 🧪 Run smoke tests
 	@bash $(TESTS_DIR)/smoke-test.sh
 
-# ── Maintenance ──────────────────────────────────────────────────────────────
-
-clean: ## 🧹 Stop LocalStack and remove all data
-	@echo "$(BOLD)$(RED)▸ Cleaning up all LocalStack data...$(RESET)"
-	@docker-compose -f $(COMPOSE_FILE) down -v --remove-orphans 2>/dev/null || true
-	@rm -rf volume/
+clean: ## 🧹 Remove all data
+	@docker compose -f $(COMPOSE_FILE) down -v --remove-orphans 2>/dev/null || true
+	@rm -rf data/
 	@rm -f lambda/**/*.zip 2>/dev/null || true
-	@echo "$(BOLD)$(GREEN)✓ Clean complete$(RESET)"
+	@echo "$(B)$(G)✓ Clean$(X)"
 
-setup: ## 🔧 Initial project setup (copy .env, install deps)
-	@echo "$(BOLD)$(CYAN)▸ Setting up project...$(RESET)"
+setup: ## 🔧 Initial setup
 	@[ -f .env ] || cp .env.example .env
 	@chmod +x scripts/*.sh utils/*.sh init-scripts/*.sh tests/*.sh 2>/dev/null || true
-	@echo "$(BOLD)$(GREEN)✓ Setup complete. Run 'make up' to start.$(RESET)"
-
-install-deps: ## 📥 Install awscli-local wrapper
-	@echo "$(BOLD)$(CYAN)▸ Installing dependencies...$(RESET)"
-	@pip install awscli-local
-	@echo "$(BOLD)$(GREEN)✓ Dependencies installed$(RESET)"
+	@echo "$(B)$(G)✓ Setup complete. Run 'make up' to start.$(X)"

@@ -1,70 +1,61 @@
 # ==============================================================================
-# AWS LocalStack — Docker Compose Configuration
+# AWS Locally with Floci — Docker Compose Configuration
 # ==============================================================================
-# Professional-grade local AWS emulation environment.
+# Floci: Fast, free, open-source AWS emulator. MIT Licensed.
+# https://floci.io
 #
 # Usage:
-#   docker-compose up -d          # Start LocalStack
-#   docker-compose down           # Stop LocalStack
-#   docker-compose logs -f        # Stream logs
+#   docker compose up -d     # Start Floci
+#   docker compose down      # Stop Floci
+#   docker compose logs -f   # Stream logs
 #
-# All AWS services are accessible via:  http://localhost:4566
+# All AWS services accessible at:  http://localhost:4566
 # ==============================================================================
 
 services:
-  localstack:
-    image: localstack/localstack:4.0
-    container_name: aws-localstack
-    hostname: localstack
+  floci:
+    image: floci/floci:latest
+    container_name: floci-aws
+    hostname: floci
     restart: unless-stopped
 
     ports:
-      # ── Edge Port (single gateway for ALL AWS services) ──
+      # ── Single gateway port for ALL AWS services ──
       - "4566:4566"
-      # ── External service port range ──
-      - "4510-4559:4510-4559"
 
     environment:
-      # ── Core Configuration ──
+      # ── Logging ──
+      - FLOCI_LOG_LEVEL=${FLOCI_LOG_LEVEL:-info}
+
+      # ── Persistence ──
+      - FLOCI_DATA_DIR=/var/lib/floci
+
+      # ── AWS defaults (used by init scripts inside the container) ──
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-localstack}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-localstack}
-
-      # ── Service Configuration ──
-      - SERVICES=s3,dynamodb,sqs,sns,lambda,apigateway,iam,cloudformation,ec2,secretsmanager,stepfunctions,kinesis,events
-      - EAGER_SERVICE_LOADING=1
-
-      # ── Persistence (survive container restarts) ──
-      - PERSISTENCE=${PERSISTENCE:-1}
-
-      # ── Lambda Configuration ──
-      - LAMBDA_EXECUTOR=${LAMBDA_EXECUTOR:-docker}
-      - LAMBDA_REMOTE_DOCKER=0
-      - DOCKER_HOST=unix:///var/run/docker.sock
-
-      # ── Debugging ──
-      - DEBUG=${DEBUG:-0}
-      - LS_LOG=${LS_LOG:-warn}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-test}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-test}
 
     volumes:
-      # ── Persistent data storage ──
-      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
-      # ── Docker socket (required for Lambda containers) ──
+      # ── Persistent data (survives container restarts) ──
+      - "./data:/var/lib/floci"
+
+      # ── Docker socket (required for Lambda, ECS, EC2, RDS) ──
       - "/var/run/docker.sock:/var/run/docker.sock"
-      # ── Initialization scripts (auto-execute on startup) ──
-      - "./init-scripts:/etc/localstack/init/ready.d"
+
+      # ── Init scripts (auto-execute on startup) ──
+      - "./init-scripts:/etc/floci/init/ready.d"
 
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      test: ["CMD", "curl", "-sf", "http://localhost:4566/_floci/health"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 15s
+      start_period: 10s
 
     networks:
-      - localstack-net
+      - floci-net
 
 networks:
-  localstack-net:
+  floci-net:
     driver: bridge
-    name: localstack-network
+    name: floci-network

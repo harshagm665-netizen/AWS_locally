@@ -1,16 +1,16 @@
 <div align="center">
 
-# ☁️ AWS Services Locally with LocalStack
+# ☁️ AWS Services Locally with Floci
 
-**The definitive reference for running AWS services on your local machine.**
+**The definitive guide to running AWS services on your local machine — zero cost, zero AWS account.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Required-2496ED?logo=docker)](https://docker.com)
-[![LocalStack](https://img.shields.io/badge/LocalStack-4.0-5C2D91)](https://localstack.cloud)
-[![AWS Services](https://img.shields.io/badge/AWS_Services-13+-FF9900?logo=amazonaws)](https://aws.amazon.com)
+[![Floci](https://img.shields.io/badge/Floci-Latest-5C2D91)](https://floci.io)
+[![AWS Services](https://img.shields.io/badge/AWS_Services-13+-FF9900?logo=amazonaws)](https://floci.io/floci/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-*Production-grade scripts demonstrating 13+ AWS services — copy, paste, and run. Zero AWS costs.*
+*Production-grade scripts demonstrating 13+ AWS services with Floci — copy, paste, and run.*
 
 ---
 
@@ -18,6 +18,7 @@
 [Services](#-services-covered) •
 [Architecture](#-architecture) •
 [Usage](#-usage) •
+[Why Floci?](#-why-floci) •
 [Troubleshooting](#-troubleshooting)
 
 </div>
@@ -26,7 +27,7 @@
 
 ## 🎯 What Is This?
 
-A **complete, self-contained** project that lets you run and experiment with **all major AWS services** locally using [LocalStack](https://localstack.cloud). Each service has a dedicated script with full CRUD operations, professional output formatting, and inline documentation.
+A **complete, self-contained** project that lets you run and experiment with **all major AWS services** locally using [Floci](https://floci.io) — a fast, free, open-source AWS emulator. Each service has a dedicated script with full CRUD operations, professional output, and inline documentation.
 
 **Perfect for:**
 - 🎓 Learning AWS services without an AWS account
@@ -34,6 +35,20 @@ A **complete, self-contained** project that lets you run and experiment with **a
 - 🏗️ Prototyping infrastructure before deploying to production
 - 📋 Interview prep and hands-on demonstrations
 - 🧪 CI/CD pipeline testing
+
+---
+
+## 🚀 Why Floci?
+
+| Feature | Floci | LocalStack (Free) |
+|---------|-------|-------------------|
+| **Startup time** | ~24ms | ~5-10s |
+| **Memory (idle)** | ~13 MiB | ~300+ MiB |
+| **License** | MIT — forever free | Community Edition (limited) |
+| **Feature gates** | None | Many Pro-only features |
+| **Auth tokens** | Not required | Required for some features |
+| **AWS services** | 50+ | ~30 (free tier) |
+| **Multi-cloud** | AWS + Azure + GCP | AWS only |
 
 ---
 
@@ -46,23 +61,34 @@ A **complete, self-contained** project that lets you run and experiment with **a
 | Docker | 20.10+ | [docker.com](https://docs.docker.com/get-docker/) |
 | Docker Compose | 2.0+ | Included with Docker Desktop |
 | AWS CLI | 2.x | `pip install awscli` |
-| awslocal | Latest | `pip install awscli-local` |
 
-### 1. Clone & Setup
+### Option A: Docker Compose (Recommended)
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/aws-locally.git
-cd aws-locally
+git clone https://github.com/YOUR_USERNAME/aws-locally-floci.git
+cd aws-locally-floci
 make setup
-```
-
-### 2. Start LocalStack
-
-```bash
 make up
 ```
 
-### 3. Run Demos
+### Option B: Floci CLI
+
+```bash
+# Install Floci CLI
+# macOS/Linux:
+curl -fsSL https://floci.io/install.sh | sh
+
+# Windows (PowerShell):
+irm https://floci.io/install.ps1 | iex
+
+# Start Floci
+floci start
+
+# Export environment variables
+eval $(floci env)    # Linux/macOS
+```
+
+### Run Demos
 
 ```bash
 # Run everything
@@ -74,7 +100,7 @@ make demo-dynamodb
 make demo-lambda
 ```
 
-### 4. Run Smoke Tests
+### Run Smoke Tests
 
 ```bash
 make test
@@ -106,7 +132,8 @@ make test
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                  AWS LocalStack (localhost:4566)              │
+│                    Floci (localhost:4566)                     │
+│            Fast, free, open-source AWS emulator               │
 ├──────────────────────────────────────────────────────────────┤
 │                                                              │
 │   Client ──▶ API Gateway ──▶ Lambda ──▶ DynamoDB            │
@@ -124,15 +151,15 @@ make test
 └──────────────────────────────────────────────────────────────┘
 ```
 
-> 📖 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed diagrams and data flow.
+> 📖 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed diagrams.
 
 ---
 
 ## 📁 Project Structure
 
 ```
-aws-locally/
-├── docker-compose.yml              # LocalStack orchestration
+aws-locally-floci/
+├── docker-compose.yml              # Floci orchestration
 ├── Makefile                        # One-command operations
 ├── .env.example                    # Environment template
 │
@@ -151,7 +178,7 @@ aws-locally/
 │   ├── full-stack.yaml            # S3 + DDB + SQS + SNS + IAM
 │   └── networking.yaml            # VPC + Subnets + Security Groups
 │
-├── init-scripts/                   # Auto-run on LocalStack startup
+├── init-scripts/                   # Auto-run on Floci startup
 │   └── 01-bootstrap.sh           # Pre-provision base resources
 │
 ├── tests/                         # Validation
@@ -160,7 +187,7 @@ aws-locally/
 │
 ├── utils/                         # Shared utilities
 │   ├── colors.sh                 # Terminal formatting & logging
-│   └── wait-for-localstack.sh    # Health check with retry
+│   └── wait-for-floci.sh         # Health check with retry
 │
 └── docs/                          # Documentation
     └── ARCHITECTURE.md            # Architecture diagrams
@@ -174,100 +201,64 @@ aws-locally/
 
 | Command | Description |
 |---------|-------------|
-| `make up` | 🚀 Start LocalStack |
-| `make down` | 🛑 Stop LocalStack |
-| `make restart` | 🔄 Restart LocalStack |
+| `make up` | 🚀 Start Floci |
+| `make down` | 🛑 Stop Floci |
+| `make restart` | 🔄 Restart Floci |
 | `make status` | 📊 Health check dashboard |
-| `make logs` | 📋 Stream LocalStack logs |
+| `make logs` | 📋 Stream Floci logs |
 | `make demo` | 🎬 Run ALL service demos |
 | `make demo-s3` | 📦 Run S3 demo only |
 | `make demo-lambda` | ⚡ Run Lambda demo only |
 | `make deploy` | 🏗️ Deploy CloudFormation stacks |
-| `make validate` | ✅ Validate CF templates |
 | `make test` | 🧪 Run smoke tests |
 | `make clean` | 🧹 Remove all data & containers |
 | `make setup` | 🔧 Initial project setup |
-| `make install-deps` | 📥 Install awscli-local |
 
 ### Running Individual Scripts
 
 ```bash
-# Direct execution
 bash scripts/01-s3-operations.sh
-
-# Or use make targets
-make demo-dynamodb
-make demo-sqs
-make demo-lambda
 ```
 
-### CloudFormation Deployment
+### Endpoints & Credentials
 
-```bash
-# Validate templates
-make validate
-
-# Deploy full stack
-make deploy
-
-# Or deploy manually
-awslocal cloudformation create-stack \
-    --stack-name my-stack \
-    --template-body file://cloudformation/full-stack.yaml
-```
-
----
-
-## 🌐 Endpoints
-
-All services are accessible via a single endpoint:
+All services accessible at:
 
 ```
 http://localhost:4566
 ```
 
-Use `awslocal` (recommended) or the standard AWS CLI with `--endpoint-url`:
+Use the standard AWS CLI with `--endpoint-url`:
 
 ```bash
-# Using awslocal (auto-routes to LocalStack)
-awslocal s3 ls
-
-# Using standard AWS CLI
 aws --endpoint-url=http://localhost:4566 s3 ls
 ```
 
-**Credentials** (any dummy values work):
-```
-AWS_ACCESS_KEY_ID=localstack
-AWS_SECRET_ACCESS_KEY=localstack
-AWS_DEFAULT_REGION=us-east-1
+Or set environment variables:
+```bash
+export AWS_ENDPOINT_URL=http://localhost:4566
+export AWS_ACCESS_KEY_ID=test
+export AWS_SECRET_ACCESS_KEY=test
+export AWS_DEFAULT_REGION=us-east-1
+
+# Then use AWS CLI normally
+aws s3 ls
 ```
 
 ---
 
 ## 🐛 Troubleshooting
 
-### LocalStack won't start
+### Floci won't start
 ```bash
-# Check Docker is running
-docker info
-
-# Check port conflicts
-lsof -i :4566
-
-# View container logs
-docker-compose logs localstack
-```
-
-### "command not found: awslocal"
-```bash
-pip install awscli-local
+docker info                      # Check Docker is running
+docker-compose logs floci        # View logs
+lsof -i :4566                   # Check port conflicts
 ```
 
 ### Lambda functions fail
 ```bash
 # Ensure Docker socket is mounted (check docker-compose.yml)
-# Re-run the Lambda script to recreate functions
 make demo-lambda
 ```
 
@@ -278,31 +269,29 @@ chmod +x scripts/*.sh utils/*.sh tests/*.sh init-scripts/*.sh
 
 ### Reset everything
 ```bash
-make clean
-make up
+make clean && make up
 ```
 
 ---
 
-## 🤝 Contributing
+## 📚 Resources
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/new-service`)
-3. Add your service script in `scripts/`
-4. Update the smoke test in `tests/smoke-test.sh`
-5. Submit a Pull Request
+- [Floci Official Docs](https://floci.io/floci/)
+- [Floci GitHub](https://github.com/floci-io)
+- [Floci AWS Services List](https://floci.io/floci/services/)
+- [AWS CLI Reference](https://docs.aws.amazon.com/cli/latest/reference/)
 
 ---
 
 ## 📝 License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
 <div align="center">
 
-**Built with ❤️ for the AWS developer community**
+**Built with ☁️ Floci — the fast, free, open-source AWS emulator**
 
 *Star ⭐ this repo if you find it useful!*
 

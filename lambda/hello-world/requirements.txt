@@ -1,1 +1,1 @@
-# Hello World Lambda — No external dependencies required
+boto3==1.34.14

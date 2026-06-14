@@ -1,11 +1,11 @@
 # Architecture Overview
 
-## Service Interaction Map
+## Service Interaction Map (Floci)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                        AWS LocalStack Environment                          │
-│                        http://localhost:4566                                │
+│                            Floci Emulator Environment                       │
+│                            http://localhost:4566                            │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ┌──────────┐    ┌──────────────┐    ┌──────────────┐    ┌──────────────┐  │
@@ -13,96 +13,12 @@
 │  │  (curl)   │    │  REST API    │    │  Functions   │    │  Tables      │  │
 │  └──────────┘    └──────────────┘    └──────┬───────┘    └──────────────┘  │
 │                                              │                              │
-│                                    ┌─────────┼─────────┐                   │
-│                                    │         │         │                    │
-│                                    ▼         ▼         ▼                    │
-│                              ┌─────────┐ ┌───────┐ ┌────────┐             │
-│                              │   S3    │ │  SQS  │ │  SNS   │             │
-│                              │ Buckets │ │ Queue │ │ Topics │             │
-│                              └─────────┘ └───┬───┘ └───┬────┘             │
-│                                               │         │                   │
-│                                               ▼         ▼                   │
-│                                         ┌───────────────────┐              │
-│                                         │  Event Processor  │              │
-│                                         │     Lambda        │              │
-│                                         └───────────────────┘              │
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │  Supporting Services                                                │   │
-│  │  ┌────────────┐ ┌──────────────┐ ┌───────────┐ ┌───────────────┐  │   │
-│  │  │    IAM     │ │   Secrets    │ │  Kinesis  │ │  EventBridge  │  │   │
-│  │  │ Roles/Users│ │   Manager    │ │  Streams  │ │  Event Bus    │  │   │
-│  │  └────────────┘ └──────────────┘ └───────────┘ └───────────────┘  │   │
-│  │  ┌────────────┐ ┌──────────────┐ ┌───────────┐                    │   │
-│  │  │    EC2     │ │    Step      │ │CloudForm- │                    │   │
-│  │  │ Instances  │ │  Functions   │ │  ation    │                    │   │
-│  │  └────────────┘ └──────────────┘ └───────────┘                    │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                                                                             │
+│                                              ▼                              │
+│                                      ┌─────────┐                          │
+│                                      │   S3    │                          │
+│                                      │ Buckets │                          │
+│                                      └─────────┘                          │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Data Flow
-
-```
-  User Request                    Event-Driven Processing
-  ───────────                     ────────────────────────
-
-  curl POST /items                SNS Topic publishes
-       │                               │
-       ▼                               ▼
-  API Gateway                     SQS Queue receives
-       │                               │
-       ▼                               ▼
-  Lambda (api-processor)          Lambda (event-processor)
-       │                               │
-       ├──▶ DynamoDB (write)           ├──▶ DynamoDB (write)
-       ├──▶ S3 (store file)            ├──▶ S3 (archive)
-       └──▶ SNS (notify)              └──▶ CloudWatch (log)
-```
-
-## CloudFormation Stack Dependencies
-
-```
-  networking.yaml                 full-stack.yaml
-  ─────────────                   ───────────────
-  ┌─────────────────┐            ┌─────────────────┐
-  │       VPC       │            │    S3 Buckets    │
-  │   ┌─────────┐   │            │  ┌────┐ ┌────┐  │
-  │   │ Public  │   │            │  │Data│ │Logs│  │
-  │   │ Subnets │   │            │  └────┘ └────┘  │
-  │   └─────────┘   │            ├─────────────────┤
-  │   ┌─────────┐   │            │ DynamoDB Tables  │
-  │   │ Private │   │            │  ┌─────┐ ┌────┐ │
-  │   │ Subnets │   │            │  │Users│ │Evts│ │
-  │   └─────────┘   │            │  └─────┘ └────┘ │
-  │   ┌─────────┐   │            ├─────────────────┤
-  │   │ Security│   │            │    SQS + SNS     │
-  │   │ Groups  │   │            │  ┌───┐   ┌───┐  │
-  │   │ Web/App │   │            │  │DLQ│──▶│Q  │  │
-  │   │  /DB    │   │            │  └───┘   └───┘  │
-  │   └─────────┘   │            │    ┌───┐        │
-  └─────────────────┘            │    │SNS│───▶SQS │
-                                  │    └───┘        │
-                                  ├─────────────────┤
-                                  │   IAM + Secrets  │
-                                  └─────────────────┘
-```
-
-## Service Matrix
-
-| Service           | Script                      | CloudFormation | Init Script |
-|-------------------|-----------------------------|:--------------:|:-----------:|
-| S3                | `01-s3-operations.sh`       | ✅             | ✅          |
-| DynamoDB          | `02-dynamodb-operations.sh` | ✅             | ✅          |
-| SQS               | `03-sqs-operations.sh`      | ✅             | ✅          |
-| SNS               | `04-sns-operations.sh`      | ✅             | ✅          |
-| Lambda            | `05-lambda-operations.sh`   | ✅             |             |
-| API Gateway       | `06-apigateway-operations.sh`|               |             |
-| IAM               | `07-iam-operations.sh`      | ✅             |             |
-| CloudFormation    | `08-cloudformation-deploy.sh`|               |             |
-| EC2               | `09-ec2-operations.sh`      |               |             |
-| Secrets Manager   | `10-secretsmanager-ops.sh`  | ✅             |             |
-| Step Functions    | `11-stepfunctions-ops.sh`   |               |             |
-| Kinesis           | `12-kinesis-operations.sh`  |               |             |
-| EventBridge       | `13-eventbridge-ops.sh`     |               |             |
+> Built with Floci — the fast, free, open-source AWS emulator.
