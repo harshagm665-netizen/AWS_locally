@@ -65,8 +65,8 @@ A **complete, self-contained** project that lets you run and experiment with **a
 ### Option A: Docker Compose (Recommended)
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/aws-locally-floci.git
-cd aws-locally-floci
+git clone https://github.com/harshagm665-netizen/AWS_locally.git
+cd AWS_locally
 make setup
 make up
 ```
